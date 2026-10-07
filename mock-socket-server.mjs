@@ -1,13 +1,37 @@
 import { createServer } from 'node:http'
 import { Server } from 'socket.io'
 
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 
-const httpServer = createServer()
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'https://frontend-challenge-jungle-gaming-sand.vercel.app',
+]
+
+const httpServer = createServer((req, res) => {
+  if (req.url === '/') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+    })
+
+    res.end(
+      JSON.stringify({
+        status: 'ok',
+        service: 'kurio-socket-server',
+      }),
+    )
+
+    return
+  }
+
+  res.writeHead(404)
+  res.end()
+})
 
 const io = new Server(httpServer, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
   },
 })
@@ -68,8 +92,8 @@ setInterval(() => {
   )
 }, 5000)
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(
-    `Socket.IO mock rodando em http://localhost:${PORT}`,
+    `Socket.IO mock rodando na porta ${PORT}`,
   )
 })
