@@ -1,4 +1,8 @@
-import { Link } from '@tanstack/react-router'
+import {
+  Link,
+  useNavigate,
+} from '@tanstack/react-router'
+
 import {
   Archive,
   FileDown,
@@ -10,6 +14,8 @@ import {
   WalletCards,
 } from 'lucide-react'
 
+import { clearAuthUser } from '@/features/auth/auth-storage'
+
 type AccountSidebarProps = {
   activeItem?: 'profile' | 'wallets'
 }
@@ -17,6 +23,8 @@ type AccountSidebarProps = {
 export function AccountSidebar({
   activeItem = 'profile',
 }: AccountSidebarProps) {
+  const navigate = useNavigate()
+
   const itemClass =
     'flex h-11.25 w-full min-w-0 items-center gap-3 border-l-6 px-3 text-sm text-[#D28A4C] transition-colors xl:px-4'
 
@@ -25,6 +33,14 @@ export function AccountSidebar({
 
   const activeClass =
     `${itemClass} border-[#D28A4C]`
+
+  function handleLogout() {
+    clearAuthUser()
+
+    void navigate({
+      to: '/',
+    })
+  }
 
   return (
     <aside
@@ -150,6 +166,7 @@ export function AccountSidebar({
         <div className="border-t border-[#513421]">
           <button
             type="button"
+            onClick={handleLogout}
             className={inactiveClass}
           >
             <LogOut
