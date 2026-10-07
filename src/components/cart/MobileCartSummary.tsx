@@ -3,10 +3,18 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { CartItem } from '@/features/cart/cart-storage'
+import { api } from '@/services/api/client'
 
 type MobileCartSummaryProps = {
   cart: CartItem[]
   onCheckout: () => void
+}
+
+type CouponResponse = {
+  code: string
+  status: 'valid' | 'invalid' | 'expired'
+  discountPercentage: number
+  message: string
 }
 
 const NETWORK_FEE = 0.016
@@ -15,21 +23,111 @@ export function MobileCartSummary({
   cart,
   onCheckout,
 }: MobileCartSummaryProps) {
-  const [promoCode, setPromoCode] = useState('')
+  const [promoCode, setPromoCode] =
+    useState('')
+
+  const [appliedCoupon, setAppliedCoupon] =
+    useState<CouponResponse | null>(null)
+
+  const [couponMessage, setCouponMessage] =
+    useState('')
+
+  const [
+    isApplyingCoupon,
+    setIsApplyingCoupon,
+  ] = useState(false)
 
   const subtotal = cart.reduce(
     (total, item) =>
-      total + Number(item.nft.price) * item.quantity,
+      total +
+      Number(item.nft.price) *
+        item.quantity,
     0,
   )
 
-  const discount = 0
-  const total = subtotal - discount + NETWORK_FEE
+  const discountPercentage =
+    appliedCoupon?.discountPercentage ?? 0
 
-  function handleApplyPromoCode() {
-    if (!promoCode.trim()) return
+  const discount =
+    subtotal *
+    (discountPercentage / 100)
 
-    console.log('Código promocional:', promoCode)
+  const total =
+    subtotal -
+    discount +
+    NETWORK_FEE
+
+  async function handleApplyPromoCode() {
+    const code = promoCode.trim()
+
+    if (!code) {
+      setAppliedCoupon(null)
+
+      setCouponMessage(
+        'Informe um código promocional.',
+      )
+
+      return
+    }
+
+    setIsApplyingCoupon(true)
+    setCouponMessage('')
+
+    try {
+      const response =
+        await api.post<CouponResponse>(
+          '/coupons/validate',
+          {
+            code,
+          },
+        )
+
+      setAppliedCoupon(response.data)
+
+      setPromoCode(
+        response.data.code,
+      )
+
+      setCouponMessage(
+        response.data.message,
+      )
+    } catch (error) {
+      setAppliedCoupon(null)
+
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error
+      ) {
+        const axiosError = error as {
+          response?: {
+            data?: {
+              message?: string
+            }
+          }
+        }
+
+        setCouponMessage(
+          axiosError.response?.data
+            ?.message ??
+            'Não foi possível validar o cupom.',
+        )
+      } else {
+        setCouponMessage(
+          'Não foi possível validar o cupom.',
+        )
+      }
+    } finally {
+      setIsApplyingCoupon(false)
+    }
+  }
+
+  function handleRemovePromoCode() {
+    setAppliedCoupon(null)
+    setPromoCode('')
+    setCouponMessage(
+      'Cupom removido.',
+    )
   }
 
   return (
@@ -47,7 +145,6 @@ export function MobileCartSummary({
         pt-[24px]
       "
     >
-      {/* CONTEÚDO */}
       <div
         className="
           flex
@@ -56,7 +153,6 @@ export function MobileCartSummary({
           gap-[12px]
         "
       >
-        {/* CÓDIGO PROMOCIONAL */}
         <div
           className="
             flex
@@ -72,10 +168,16 @@ export function MobileCartSummary({
         >
           <Input
             value={promoCode}
+            disabled={Boolean(
+              appliedCoupon,
+            )}
             onChange={(event) =>
-              setPromoCode(event.target.value)
+              setPromoCode(
+                event.target.value,
+              )
             }
             placeholder="Digite o código promocional..."
+            aria-label="Código promocional"
             className="
               h-[50px]
               min-w-0
@@ -94,30 +196,75 @@ export function MobileCartSummary({
             "
           />
 
-          <Button
-            type="button"
-            onClick={handleApplyPromoCode}
-            className="
-              h-[50px]
-              w-[97px]
-              shrink-0
-              cursor-pointer
-              rounded-[40px]
-              bg-[#D28A4C]
-              p-0
-              text-[14px]
-              font-bold
-              text-[#F5F1EB]
-              shadow-none
-              hover:bg-[#D28A4C]
-              hover:opacity-90
-            "
-          >
-            Aplicar
-          </Button>
+          {appliedCoupon ? (
+            <Button
+              type="button"
+              onClick={
+                handleRemovePromoCode
+              }
+              className="
+                h-[50px]
+                w-[97px]
+                shrink-0
+                cursor-pointer
+                rounded-[40px]
+                bg-[#D28A4C]
+                p-0
+                text-[14px]
+                font-bold
+                text-[#F5F1EB]
+                shadow-none
+                hover:bg-[#D28A4C]
+                hover:opacity-90
+              "
+            >
+              Remover
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              disabled={
+                isApplyingCoupon
+              }
+              onClick={
+                handleApplyPromoCode
+              }
+              className="
+                h-[50px]
+                w-[97px]
+                shrink-0
+                cursor-pointer
+                rounded-[40px]
+                bg-[#D28A4C]
+                p-0
+                text-[14px]
+                font-bold
+                text-[#F5F1EB]
+                shadow-none
+                hover:bg-[#D28A4C]
+                hover:opacity-90
+              "
+            >
+              {isApplyingCoupon
+                ? 'Validando...'
+                : 'Aplicar'}
+            </Button>
+          )}
         </div>
 
-        {/* SUBTOTAL */}
+        {couponMessage && (
+          <p
+            role="status"
+            className="
+              px-[8px]
+              text-[11px]
+              text-[#E89B55]
+            "
+          >
+            {couponMessage}
+          </p>
+        )}
+
         <div
           className="
             flex
@@ -136,7 +283,6 @@ export function MobileCartSummary({
           </span>
         </div>
 
-        {/* DESCONTO */}
         <div
           className="
             flex
@@ -148,14 +294,15 @@ export function MobileCartSummary({
             text-[#F5F1EB]
           "
         >
-          <span>Desconto do lançamento</span>
+          <span>
+            Desconto do lançamento
+          </span>
 
           <span>
             (-) {discount.toFixed(2)}
           </span>
         </div>
 
-        {/* TAXA DE REDE */}
         <div
           className="
             flex
@@ -171,7 +318,8 @@ export function MobileCartSummary({
 
           <div className="flex flex-col items-end">
             <span>
-              {NETWORK_FEE.toFixed(3)} ETH
+              {NETWORK_FEE.toFixed(3)}{' '}
+              ETH
             </span>
 
             <span
@@ -186,7 +334,6 @@ export function MobileCartSummary({
           </div>
         </div>
 
-        {/* TOTAL */}
         <div
           className="
             flex
@@ -220,7 +367,6 @@ export function MobileCartSummary({
         </div>
       </div>
 
-      {/* CHECKOUT */}
       <Button
         type="button"
         onClick={onCheckout}

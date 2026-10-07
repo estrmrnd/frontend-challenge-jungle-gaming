@@ -21,6 +21,9 @@ export function ProfileForm({
   const [displayName, setDisplayName] =
     useState('')
 
+  const [saveMessage, setSaveMessage] =
+    useState('')
+
   const [username, setUsername] =
     useState(user.username)
 
@@ -335,6 +338,11 @@ export function ProfileForm({
 
         <Button
           type="button"
+          onClick={() =>
+            setSaveMessage(
+              'Dados salvos com sucesso.',
+            )
+          }
           className="
             mt-7
             h-9
@@ -349,6 +357,15 @@ export function ProfileForm({
         >
           Salvar
         </Button>
+
+        {saveMessage && (
+          <p
+            role="status"
+            className="mt-3 text-xs text-[#D28A4C]"
+          >
+            {saveMessage}
+          </p>
+        )}
       </section>
     </section>
   )

@@ -9,15 +9,19 @@ export function NftCard({ nft }: NftCardProps) {
   return (
     <article
       className="
-        flex h-89 w-64.5
-        flex-col gap-3
+        flex w-64.5
+        flex-col
+        gap-3
+        bg-[#241612]
+        p-2
       "
     >
       <Link to={`/nft/${nft.id}`}>
         <div
           className="
-            h-75 w-64.5
+            h-[284px] w-full
             overflow-hidden
+            rounded-[12px]
             bg-[#241612]
           "
         >
@@ -31,7 +35,7 @@ export function NftCard({ nft }: NftCardProps) {
 
       <p
         className="
-          h-4 w-64.5
+          h-4 w-full
           text-[16px] font-normal
           leading-4 tracking-normal
           text-[#F5F1EB]
@@ -42,7 +46,7 @@ export function NftCard({ nft }: NftCardProps) {
 
       <p
         className="
-          h-4 w-64.5
+          h-4 w-full
           text-[18px] font-bold
           leading-4 tracking-normal
           text-[#E89B55]

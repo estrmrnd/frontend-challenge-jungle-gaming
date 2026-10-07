@@ -13,6 +13,8 @@ import {
   getAuthUser,
 } from '@/features/auth/auth-storage'
 
+import { getCart } from '@/features/cart/cart-storage'
+
 export function Header() {
   const [isAuthOpen, setIsAuthOpen] =
     useState(false)
@@ -21,6 +23,12 @@ export function Header() {
     useState<AuthUser | null>(() =>
       getAuthUser(),
     )
+
+  const cartQuantity = getCart().reduce(
+    (total, item) =>
+      total + item.quantity,
+    0,
+  )
 
   function handleAuthenticated(
     authenticatedUser: AuthUser,
@@ -97,13 +105,37 @@ export function Header() {
 
           <Link
             to="/cart"
-            aria-label="Carrinho"
-            className="cursor-pointer"
+            aria-label={`Carrinho${cartQuantity > 0 ? ` (${cartQuantity} itens)` : ''}`}
+            className="relative cursor-pointer"
           >
             <img
               src={cartIcon}
               alt=""
             />
+
+            {cartQuantity > 0 && (
+              <span
+                className="
+                  absolute
+                  -right-2
+                  -top-2
+                  flex
+                  h-[16px]
+                  min-w-[16px]
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-[#D28A4C]
+                  px-1
+                  text-[9px]
+                  font-bold
+                  leading-none
+                  text-[#140D0A]
+                "
+              >
+                {cartQuantity}
+              </span>
+            )}
           </Link>
 
           {user ? (

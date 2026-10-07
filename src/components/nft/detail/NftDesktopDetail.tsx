@@ -192,8 +192,8 @@ export function NftDesktopDetail({
             xl:h-112
             xl:w-148.75
             xl:flex-none
-            xl:justify-between
-            xl:gap-0
+            xl:justify-start
+            xl:gap-5
           "
         >
           {/* CABEÇALHO */}
@@ -231,7 +231,9 @@ export function NftDesktopDetail({
                 items-center
                 justify-between
                 gap-3
-                xl:h-5
+                border-b
+                border-[#3F2319]
+                pb-3
                 xl:w-148.75
               "
             >

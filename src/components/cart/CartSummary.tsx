@@ -3,10 +3,18 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { CartItem } from '@/features/cart/cart-storage'
+import { api } from '@/services/api/client'
 
 type CartSummaryProps = {
   cart: CartItem[]
   onCheckout: () => void
+}
+
+type CouponResponse = {
+  code: string
+  status: 'valid' | 'invalid' | 'expired'
+  discountPercentage: number
+  message: string
 }
 
 const NETWORK_FEE = 0.016
@@ -16,6 +24,12 @@ export function CartSummary({
   onCheckout,
 }: CartSummaryProps) {
   const [promoCode, setPromoCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] =
+    useState<CouponResponse | null>(null)
+  const [couponMessage, setCouponMessage] =
+    useState('')
+  const [isApplyingCoupon, setIsApplyingCoupon] =
+    useState(false)
 
   const subtotal = cart.reduce(
     (total, item) =>
@@ -24,17 +38,75 @@ export function CartSummary({
     0,
   )
 
-  const discount = 0
+  const discountPercentage =
+    appliedCoupon?.discountPercentage ?? 0
+
+  const discount =
+    subtotal * (discountPercentage / 100)
+
   const total =
     subtotal - discount + NETWORK_FEE
 
-  function handleApplyPromoCode() {
-    if (!promoCode.trim()) return
+  async function handleApplyPromoCode() {
+    const code = promoCode.trim()
 
-    console.log(
-      'Código promocional:',
-      promoCode,
-    )
+    if (!code) {
+      setAppliedCoupon(null)
+      setCouponMessage(
+        'Informe um código promocional.',
+      )
+      return
+    }
+
+    setIsApplyingCoupon(true)
+    setCouponMessage('')
+
+    try {
+      const response =
+        await api.post<CouponResponse>(
+          '/coupons/validate',
+          {
+            code,
+          },
+        )
+
+      setAppliedCoupon(response.data)
+      setPromoCode(response.data.code)
+      setCouponMessage(response.data.message)
+    } catch (error) {
+      setAppliedCoupon(null)
+
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error
+      ) {
+        const axiosError = error as {
+          response?: {
+            data?: {
+              message?: string
+            }
+          }
+        }
+
+        setCouponMessage(
+          axiosError.response?.data?.message ??
+            'Não foi possível validar o cupom.',
+        )
+      } else {
+        setCouponMessage(
+          'Não foi possível validar o cupom.',
+        )
+      }
+    } finally {
+      setIsApplyingCoupon(false)
+    }
+  }
+
+  function handleRemovePromoCode() {
+    setAppliedCoupon(null)
+    setPromoCode('')
+    setCouponMessage('Cupom removido.')
   }
 
   return (
@@ -52,8 +124,6 @@ export function CartSummary({
         xl:min-w-[332px]
       "
     >
-      {/* TÍTULO */}
-
       <div
         className="
           flex
@@ -77,8 +147,6 @@ export function CartSummary({
         </h2>
       </div>
 
-      {/* CÓDIGO PROMOCIONAL */}
-
       <div className="flex w-full min-w-0 flex-col gap-[8px]">
         <label
           htmlFor="promo-code"
@@ -97,10 +165,9 @@ export function CartSummary({
           <Input
             id="promo-code"
             value={promoCode}
+            disabled={Boolean(appliedCoupon)}
             onChange={(event) =>
-              setPromoCode(
-                event.target.value,
-              )
+              setPromoCode(event.target.value)
             }
             placeholder="Digite o código promocional..."
             className="
@@ -122,34 +189,71 @@ export function CartSummary({
             "
           />
 
-          <Button
-            type="button"
-            onClick={
-              handleApplyPromoCode
-            }
-            className="
-              h-[40px]
-              w-[86px]
-              shrink-0
-              rounded-l-none
-              rounded-r-[3px]
-              bg-[#D28A4C]
-              px-2
-              text-[12px]
-              font-bold
-              text-[#140D0A]
-              hover:bg-[#D28A4C]
-              hover:text-[#140D0A]
-              xl:w-[102px]
-              xl:text-[13px]
-            "
-          >
-            Aplicar
-          </Button>
+          {appliedCoupon ? (
+            <Button
+              type="button"
+              onClick={
+                handleRemovePromoCode
+              }
+              className="
+                h-[40px]
+                w-[86px]
+                shrink-0
+                rounded-l-none
+                rounded-r-[3px]
+                bg-[#D28A4C]
+                px-2
+                text-[12px]
+                font-bold
+                text-[#140D0A]
+                hover:bg-[#D28A4C]
+                hover:text-[#140D0A]
+                xl:w-[102px]
+                xl:text-[13px]
+              "
+            >
+              Remover
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              disabled={isApplyingCoupon}
+              onClick={
+                handleApplyPromoCode
+              }
+              className="
+                h-[40px]
+                w-[86px]
+                shrink-0
+                rounded-l-none
+                rounded-r-[3px]
+                bg-[#D28A4C]
+                px-2
+                text-[12px]
+                font-bold
+                text-[#140D0A]
+                hover:bg-[#D28A4C]
+                hover:text-[#140D0A]
+                xl:w-[102px]
+                xl:text-[13px]
+              "
+            >
+              {isApplyingCoupon
+                ? 'Validando...'
+                : 'Aplicar'}
+            </Button>
+          )}
         </div>
-      </div>
 
-      {/* FEES */}
+        {couponMessage && (
+          <p
+            role="status"
+            className="text-[11px] text-[#E89B55]"
+          >
+            {couponMessage}
+          </p>
+        )}
+      </div>
 
       <div
         className="
@@ -189,8 +293,7 @@ export function CartSummary({
 
           <div className="flex shrink-0 flex-col items-end gap-1">
             <span className="text-[#F5F1EB]">
-              {NETWORK_FEE.toFixed(3)}{' '}
-              ETH
+              {NETWORK_FEE.toFixed(3)} ETH
             </span>
 
             <span className="text-[11px] text-[#E89B55]">
@@ -199,8 +302,6 @@ export function CartSummary({
           </div>
         </div>
       </div>
-
-      {/* TOTAL */}
 
       <div
         className="
@@ -236,8 +337,6 @@ export function CartSummary({
           {total.toFixed(3)} ETH
         </span>
       </div>
-
-      {/* CHECKOUT CTA */}
 
       <div
         className="

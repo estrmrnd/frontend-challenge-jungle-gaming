@@ -20,7 +20,7 @@ export function NftInfoTabs({
       className="
         mt-16
         w-full
-        max-w-[1200px]
+        max-w-[900px]
       "
     >
       <TabsList
@@ -29,7 +29,7 @@ export function NftInfoTabs({
           grid
           h-8
           w-full
-          grid-cols-2
+          grid-cols-[1fr_1fr]
           rounded-none
           bg-transparent
           p-0

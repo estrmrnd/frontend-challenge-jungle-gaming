@@ -27,7 +27,12 @@ function Field({
   return (
     <div className="flex w-full min-w-0 flex-col gap-[12px]">
       <label className={labelClass}>
-        {label}
+        {label.replace('*', '').trim()}
+        {label.includes('*') && (
+          <span className="ml-1 text-red-500">
+            *
+          </span>
+        )}
       </label>
 
       {children}
@@ -69,13 +74,14 @@ export function CollectorProfileForm() {
           <Field label="Nome de exibição*">
             <Input
               name="displayName"
+              defaultValue="Ester Miranda"
               placeholder="Nome de exibição"
               className={inputClass}
             />
           </Field>
 
           <Field label="Rede *">
-            <Select>
+            <Select defaultValue="ethereum">
               <SelectTrigger
                 className={selectClass}
               >
@@ -101,13 +107,14 @@ export function CollectorProfileForm() {
           <Field label="Endereço da carteira*">
             <Input
               name="walletAddress"
+              defaultValue="0xA91F...E82C"
               placeholder="Endereço 0x da carteira"
               className={inputClass}
             />
           </Field>
 
           <Field label="Tipo de carteira*">
-            <Select>
+            <Select defaultValue="coinbase">
               <SelectTrigger
                 className={selectClass}
               >
@@ -134,6 +141,7 @@ export function CollectorProfileForm() {
             <Input
               type="email"
               name="email"
+              defaultValue="ester@kurio.com"
               placeholder="seuemail@exemplo.com"
               className={inputClass}
             />
@@ -146,6 +154,7 @@ export function CollectorProfileForm() {
           <Field label="Nome de usuário*">
             <Input
               name="username"
+              defaultValue="estermiranda"
               placeholder="Nome de usuário"
               className={inputClass}
             />
@@ -154,6 +163,7 @@ export function CollectorProfileForm() {
           <Field label="Nome do perfil*">
             <Input
               name="profileName"
+              defaultValue="Ester Miranda"
               placeholder="Nome do perfil"
               className={inputClass}
             />
@@ -170,6 +180,7 @@ export function CollectorProfileForm() {
           <Field label="Código de indicação*">
             <Input
               name="referralCode"
+              defaultValue="KURIO2026"
               placeholder="Código de indicação"
               className={inputClass}
             />
@@ -179,6 +190,7 @@ export function CollectorProfileForm() {
             <div className="flex w-full min-w-0">
               <Input
                 name="ensName"
+                defaultValue="ester"
                 placeholder="Nome ENS"
                 className={`${inputClass} min-w-0 rounded-r-none`}
               />
